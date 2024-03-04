@@ -68,7 +68,7 @@ def parse_packet(line):
 # Run tcpdump and stream the packets out
 async def stream_packets():
     p = await asyncio.create_subprocess_exec(
-        'tcpdump', '-i', opts.interface, '-v', '-l', opts.filters,
+        'tcpdump', '-i', opts.interface, '-v', '-l', '-n', opts.filters,
         stdout=asyncio.subprocess.PIPE)
     while True:
         # When tcpdump is run with -v, it outputs two lines per packet;
