@@ -6,9 +6,12 @@ from prometheus_client import Counter, start_http_server
 # Unsupported: ARP, nmap, and multicast
 # Not sure about IPv6 tracking.
 
-metric_labels = ['src', 'dst', 'service', 'proto']
+metric_labels = ['src', 'dst', 'service', 'proto', 'hostname', 'ip']
 service_map = {} # Loaded from /etc/services, service_map[port][proto] = service_name
 services = set() # Names of all services
+
+hostname = socket.gethostname()
+ip = socket.gethostbyname(hostname)
 
 # Given an IP or FQDN, extract the domain name to be used as server/client.
 def extract_domain(string):
@@ -49,7 +52,9 @@ def parse_packet(line):
         'src': extract_domain(m.group('src')),
         'dst': extract_domain(m.group('dst')),
         'proto': m.group('proto').lower(),
-        'service': None
+        'service': None,
+        hostname: hostname,
+        ip: ip
     }
     # If the last part of the src/dst is a service, just use the literal service name:
     if m.group('dstp') in services: labels['service'] = m.group('dstp')
