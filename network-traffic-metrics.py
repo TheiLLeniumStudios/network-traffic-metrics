@@ -53,8 +53,8 @@ def parse_packet(line):
         'dst': extract_domain(m.group('dst')),
         'proto': m.group('proto').lower(),
         'service': None,
-        hostname: hostname,
-        ip: ip
+        'hostname': hostname,
+        'ip': ip
     }
     # If the last part of the src/dst is a service, just use the literal service name:
     if m.group('dstp') in services: labels['service'] = m.group('dstp')
