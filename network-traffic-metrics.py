@@ -9,6 +9,7 @@ from prometheus_client import Counter, start_http_server
 metric_labels = ['src', 'dst', 'service', 'proto', 'hostname', 'ip']
 service_map = {} # Loaded from /etc/services, service_map[port][proto] = service_name
 services = set() # Names of all services
+last_update_time = {}
 
 hostname = socket.gethostname()
 ip = socket.gethostbyname(hostname)
@@ -69,12 +70,28 @@ def parse_packet(line):
 
     packets.labels(**labels).inc()
     throughput.labels(**labels).inc(int(m.group('length')))
+    last_update_time[labels['src'], labels['dst'], labels['service'], labels['proto'], hostname, ip] = time.time()
+
+def remove_stale_metrics():
+    current_time = time.time()
+    for labels, last_update in list(last_update_time.items()):
+        if current_time - last_update > 300:  # 5 minutes
+            print("Removing stale metric ", labels)
+            del last_update_time[labels]
+            packets.remove(*labels)
+            throughput.remove(*labels)
+
+async def remove_stale_metrics_periodically():
+    while True:
+        remove_stale_metrics()
+        await asyncio.sleep(5)  # Sleep for 5 seconds
 
 # Run tcpdump and stream the packets out
 async def stream_packets():
     p = await asyncio.create_subprocess_exec(
         'tcpdump', '-i', opts.interface, '-v', '-l', '-n', opts.filters,
         stdout=asyncio.subprocess.PIPE)
+    asyncio.create_task(remove_stale_metrics_periodically())
     while True:
         # When tcpdump is run with -v, it outputs two lines per packet;
         # readuntil ensures that each "line" is actually a parse-able string of output.
