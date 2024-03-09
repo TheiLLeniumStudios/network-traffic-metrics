@@ -48,13 +48,9 @@ def parse_packet(line):
     if not m:
         print('[SKIP] ' + line.replace("\n", "\t"))
         return
-    
-    src = extract_domain(m.group('src'))
-    if src == ip:
-        return
 
     labels = {
-        'src': src,
+        'src': extract_domain(m.group('src')),
         'dst': extract_domain(m.group('dst')),
         'proto': m.group('proto').lower(),
         'service': None,
